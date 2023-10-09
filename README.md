@@ -8,7 +8,7 @@ RaDisMod is an R package developed by Guillaume Cinkus and Vincent Marc at Avign
 
 RaDisMod requires an installation of R `4.0.0`. The instruction for the installation and the download of R can be found on the [CRAN website](https://cran.r-project.org/).
 
-Once R is installed, KarstID can be installed from [GitHub](https://github.com/busemorose/RaDisMod).
+Once R is installed, RaDisMod can be installed from [GitHub](https://github.com/busemorose/RaDisMod).
 
 ``` r
 if (!require("devtools")) install.packages("devtools") # install devtools package if needed
