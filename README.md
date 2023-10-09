@@ -37,7 +37,7 @@ The data import field allows to load a file with the following conditions:
 -   The file must have two columns representing precipitation and observed discharge, respectively named `P` and `obs`
 -   The columns must be semicolon-separated and of the same length
 
-### Type of unit hydrogram
+## Type of unit hydrogram
 
 Four unit hydrogram are available by default:
 
@@ -50,9 +50,28 @@ It is possible to import a custom unit hydrogram using `Custom` in the drop-down
 
 The length of the unit hydrogram to consider can be specified with `Length of HU`.
 
+## Production function
 
+SCS, with $P_{cumul}$ the cumulated precipitation and $J$ a parameter to calibrate.
 
+if $P_{cumul} < 0.2 * J$ then $P_{n-cumul} = 0$
 
+else $P_{n-cumul} = \frac{(P_{cumul} - 0.2 * J)^2}{P_{cumul} + 0.8 * J}$
+
+Then, to obtain the net precipitation $P_n$:
+
+```
+PN <- diff(c(0, PN_cum))
+```
+
+## Model calibration
+
+Two options:
+
+- Manual calibration using the three first sliders (`J` and two other parameters depending on the unit hydrogram)
+- Automatic calibration in the "Parameter optimisation" section using the `Run` button at the bottom. It will randomly sample parameters within the specified ranges a number of times equal to the `Iterations` number. The individual simulations are then evaluated with the mentioned performance criteria, either `NSE`, `KGE`, `KGENP` and `RMSE`.
+
+The evaluation range can be specified using the appropriate slider.
 
 
 
