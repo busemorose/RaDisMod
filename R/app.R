@@ -11,7 +11,7 @@
 #' @import ggplot2
 
 RaDisMod <- function(...) {
-  f
+
   # Increase the upload limit file size to 100
   options(shiny.maxRequestSize = 100*1024^2)
 
