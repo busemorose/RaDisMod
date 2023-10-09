@@ -161,7 +161,7 @@ RaDisMod <- function(...) {
     # Reactive functions ------------------------------------------------------
 
     # Run model with default n_run=1 when modifying UI elements
-    observeEvent(c(input$J, input$p1, input$p2, input$max_t,
+    observeEvent(c(input$J, input$p1, input$p2, input$max_t, input$type,
                    input$import, input$import_hu, input$eval_range, input$allow_NA), {
                      req(eval_range())
                      x <- model(df()$obs, df()$P, crit = input$obj,
