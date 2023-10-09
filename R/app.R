@@ -231,23 +231,23 @@ RaDisMod <- function(...) {
       x <- tidyr::tibble(t = 1:length(res$best$sim),
                          obs = res$best$obs,
                          sim = mean_distrib) |>
-        dplyr::mutate(eval = ifelse(row_number() %in% eval_range()[1]:eval_range()[2], obs, NA)) |>
+        dplyr::mutate(eval = ifelse(dplyr::row_number() %in% eval_range()[1]:eval_range()[2], obs, NA)) |>
         tidyr::pivot_longer(c(obs, sim, eval)) |>
         dplyr::mutate(name = factor(name, c("eval", "obs", "sim"))) |> # same order as scale_manual below
         ggplot() +
         # add ribbon if ci_mode only
         {if (input$ci_mode) geom_ribbon(data = tidyr::tibble(t = 1:length(res$best$sim), CI_min, CI_max),
                                         aes(x = t, ymin = CI_min, ymax = CI_max),
-                                        alpha = 0.2, fill = unname(grDevices::palette.colors()()[3]))} +
+                                        alpha = 0.2, fill = unname(grDevices::palette.colors()[3]))} +
         geom_segment(aes(x = eval_range()[1], xend = eval_range()[1],
                          y = -1, yend = res$best$obs[eval_range()[1]]),
-                     color = unname(grDevices::palette.colors()()[2]), alpha = 0.5, linetype = "dashed") +
+                     color = unname(grDevices::palette.colors()[2]), alpha = 0.5, linetype = "dashed") +
         geom_segment(aes(x = eval_range()[2], xend = eval_range()[2],
                          y = -1, yend = res$best$obs[eval_range()[2]]),
-                     color = unname(grDevices::palette.colors()()[2]), alpha = 0.5, linetype = "dashed") +
+                     color = unname(grDevices::palette.colors()[2]), alpha = 0.5, linetype = "dashed") +
         geom_line(aes(t, value, color = name, linetype = name, linewidth = name, alpha = name)) +
         geom_point(aes(t, value, color = name, size = name, alpha = name), shape = 15) +
-        scale_color_manual(name = "", values = unname(grDevices::palette.colors()()[c(2, 1, 3)])) +
+        scale_color_manual(name = "", values = unname(grDevices::palette.colors()[c(2, 1, 3)])) +
         scale_linetype_manual(name = "", values = c("solid", "solid", "solid")) +
         scale_linewidth_manual(name = "", values = c(2.5, 1, 1)) +
         scale_alpha_manual(name = "", values = c(0.75, 1, 1)) +
@@ -268,7 +268,7 @@ RaDisMod <- function(...) {
       y <- tidyr::tibble(t = 1:length(res$best$PN),
                          PN = res$best$PN) |>
         ggplot(aes(t, PN)) +
-        geom_bar(stat = "identity", color = "black", fill = unname(grDevices::palette.colors()()[6])) +
+        geom_bar(stat = "identity", color = "black", fill = unname(grDevices::palette.colors()[6])) +
         scale_y_reverse(expand = expansion(mult = c(0.1, 0)),
                         breaks = seq(0, P_scale * 10, min(5, P_scale))) +
         coord_cartesian(xlim = c(1, length(res$best$sim))) +

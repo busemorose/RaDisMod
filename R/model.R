@@ -18,14 +18,9 @@ model <- function(obs, P, n_run = 1, crit = c("KGE", "NSE", "KGENP", "KGEABS", "
 
   # Get HU function
   type <- match.arg(type)
-  if (type != "custom") source(paste0("R/utils/HU_", type, ".R"))
-
-  # Get SCS function
-  source("R/utils/SCS.R")
 
   # Get objective function
   crit <- match.arg(crit)
-  source(paste0("R/utils/", crit, ".R"))
 
   # Initialise output
   all <- list("obj" = rep(NA_real_, n_run),
