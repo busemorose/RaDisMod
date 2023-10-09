@@ -43,9 +43,9 @@ model <- function(obs, P, n_run = 1, crit = c("KGE", "NSE", "KGENP", "KGEABS", "
                "p2" = NA_real_)
 
   # Sample parameters
-  all$J <- runif(n_run, J_min, J_max)
-  all$p1 <- runif(n_run, p1_min, p1_max)
-  all$p2 <- runif(n_run, p2_min, p2_max)
+  all$J <- stats::runif(n_run, J_min, J_max)
+  all$p1 <- stats::runif(n_run, p1_min, p1_max)
+  all$p2 <- stats::runif(n_run, p2_min, p2_max)
 
   # Loop
   for (n in seq(1, n_run)) {
@@ -60,7 +60,7 @@ model <- function(obs, P, n_run = 1, crit = c("KGE", "NSE", "KGENP", "KGEABS", "
     PN <-  diff(c(0, PN_cum))
 
     # Convolution
-    sim <- rev(convolve(rev(HU), PN, conj = TRUE, type = "open"))
+    sim <- rev(stats::convolve(rev(HU), PN, conj = TRUE, type = "open"))
     sim <- sim[1:l_obs] # Same length as obs
 
     # Calculte score

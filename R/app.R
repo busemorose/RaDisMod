@@ -11,7 +11,7 @@
 #' @import ggplot2
 
 RaDisMod <- function(...) {
-
+  f
   # Increase the upload limit file size to 100
   options(shiny.maxRequestSize = 100*1024^2)
 
@@ -123,7 +123,7 @@ RaDisMod <- function(...) {
 
     df <- reactive({
       req(input$import)
-      read.delim(input$import$datapath, sep = ";")
+      utils::read.delim(input$import$datapath, sep = ";")
     })
 
     custom_HU <- reactive({
@@ -221,16 +221,16 @@ RaDisMod <- function(...) {
         req(input$percentile_max)
         ble1 <- res$all$sim[which(res$all$obj > input$min_obj)]
         ble <- lapply(seq(1, length(res$best$sim)), function(i) unname(sapply(ble1, "[", i)))
-        CI_min <- unname(sapply(ble, function(x) quantile(x, input$percentile_min)))
-        CI_max <- unname(sapply(ble, function(x) quantile(x, input$percentile_max)))
+        CI_min <- unname(sapply(ble, function(x) stats::quantile(x, input$percentile_min)))
+        CI_max <- unname(sapply(ble, function(x) stats::quantile(x, input$percentile_max)))
         mean_distrib <- sapply(ble, function(x) mean(x))
       } else {
         mean_distrib <- res$best$sim
       }
 
       x <- tidyr::tibble(t = 1:length(res$best$sim),
-                  obs = res$best$obs,
-                  sim = mean_distrib) |>
+                         obs = res$best$obs,
+                         sim = mean_distrib) |>
         dplyr::mutate(eval = ifelse(row_number() %in% eval_range()[1]:eval_range()[2], obs, NA)) |>
         tidyr::pivot_longer(c(obs, sim, eval)) |>
         dplyr::mutate(name = factor(name, c("eval", "obs", "sim"))) |> # same order as scale_manual below
@@ -238,16 +238,16 @@ RaDisMod <- function(...) {
         # add ribbon if ci_mode only
         {if (input$ci_mode) geom_ribbon(data = tidyr::tibble(t = 1:length(res$best$sim), CI_min, CI_max),
                                         aes(x = t, ymin = CI_min, ymax = CI_max),
-                                        alpha = 0.2, fill = unname(palette.colors()[3]))} +
+                                        alpha = 0.2, fill = unname(grDevices::palette.colors()()[3]))} +
         geom_segment(aes(x = eval_range()[1], xend = eval_range()[1],
                          y = -1, yend = res$best$obs[eval_range()[1]]),
-                     color = unname(palette.colors()[2]), alpha = 0.5, linetype = "dashed") +
+                     color = unname(grDevices::palette.colors()()[2]), alpha = 0.5, linetype = "dashed") +
         geom_segment(aes(x = eval_range()[2], xend = eval_range()[2],
                          y = -1, yend = res$best$obs[eval_range()[2]]),
-                     color = unname(palette.colors()[2]), alpha = 0.5, linetype = "dashed") +
+                     color = unname(grDevices::palette.colors()()[2]), alpha = 0.5, linetype = "dashed") +
         geom_line(aes(t, value, color = name, linetype = name, linewidth = name, alpha = name)) +
         geom_point(aes(t, value, color = name, size = name, alpha = name), shape = 15) +
-        scale_color_manual(name = "", values = unname(palette.colors()[c(2, 1, 3)])) +
+        scale_color_manual(name = "", values = unname(grDevices::palette.colors()()[c(2, 1, 3)])) +
         scale_linetype_manual(name = "", values = c("solid", "solid", "solid")) +
         scale_linewidth_manual(name = "", values = c(2.5, 1, 1)) +
         scale_alpha_manual(name = "", values = c(0.75, 1, 1)) +
@@ -266,9 +266,9 @@ RaDisMod <- function(...) {
       if (P_scale == 0) P_scale <- round(max(res$best$PN), 2) / 2
 
       y <- tidyr::tibble(t = 1:length(res$best$PN),
-                  PN = res$best$PN) |>
+                         PN = res$best$PN) |>
         ggplot(aes(t, PN)) +
-        geom_bar(stat = "identity", color = "black", fill = unname(palette.colors()[6])) +
+        geom_bar(stat = "identity", color = "black", fill = unname(grDevices::palette.colors()()[6])) +
         scale_y_reverse(expand = expansion(mult = c(0.1, 0)),
                         breaks = seq(0, P_scale * 10, min(5, P_scale))) +
         coord_cartesian(xlim = c(1, length(res$best$sim))) +
@@ -289,7 +289,7 @@ RaDisMod <- function(...) {
       req(res$best)
       req(eval_range())
       tidyr::tibble(t = 0:(length(res$best$HU) - 1),
-             HU = res$best$HU) |>
+                    HU = res$best$HU) |>
         ggplot(aes(x = t, y= HU)) +
         geom_segment(aes(x = which.max(res$best$HU) - 1, xend = (length(res$best$HU) / 2),
                          y = max(res$best$HU), yend = max(res$best$HU)),
@@ -423,10 +423,10 @@ RaDisMod <- function(...) {
     output$download_results <- downloadHandler(
       filename = paste0("results.txt"),
       content = function(filename) {
-        write.table(tidyr::tibble(t = 1:length(res$best$PN),
-                           PN = res$best$PN,
-                           obs = res$best$obs,
-                           sim = res$best$sim),
+        utils::write.table(tidyr::tibble(t = 1:length(res$best$PN),
+                                  PN = res$best$PN,
+                                  obs = res$best$obs,
+                                  sim = res$best$sim),
                     filename, sep = ";", row.names = FALSE)
       },
     )
