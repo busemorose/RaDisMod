@@ -45,6 +45,7 @@ model <- function(obs, P, n_run = 1, crit = c("KGE", "NSE", "KGENP", "KGEABS", "
   # Loop
   for (n in seq(1, n_run)) {
     # Calculate HU
+    if (is.na(max_t)) max_t <- 1
     if (type == "socose") HU <- HU_socose(all$p1[n], all$p2[n], max_t = max_t)
     if (type == "gamma") HU <- HU_gamma(all$p1[n], all$p2[n], max_t = max_t)
     if (type == "lnorm") HU <- HU_lnorm(all$p1[n], all$p2[n], max_t = max_t)
