@@ -11,6 +11,17 @@ RaDisMod requires an installation of R `4.0.0`. The instruction for the installa
 Once R is installed, RaDisMod can be installed from [GitHub](https://github.com/busemorose/RaDisMod).
 
 ``` r
+# install packages if needed
+if (!require("cowplot")) install.packages("cowplot") 
+if (!require("dplyr")) install.packages("dplyr") 
+if (!require("ggplot2")) install.packages("ggplot2") 
+if (!require("shiny")) install.packages("shiny") 
+if (!require("shinyjs")) install.packages("shinyjs") 
+if (!require("tidyr")) install.packages("tidyr") 
+if (!require("waiter")) install.packages("waiter") 
+```
+
+``` r
 if (!require("devtools")) install.packages("devtools") # install devtools package if needed
 devtools::install_github("busemorose/RaDisMod") # install RaDisMod package
 ```
