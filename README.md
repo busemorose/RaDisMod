@@ -36,7 +36,7 @@ The data import field allows to load a file with the following conditions:
 -   The data must be a plain text file
 -   The file must have two columns representing precipitation and observed discharge, respectively named `P` and `obs`
 -   The columns must be semicolon-separated and of the same length
--   The unit of observed discharge (`obs`) should be in `[L T<sup>-1</sup>]`
+-   The unit of observed discharge (`obs`) should be in [L T<sup>-1</sup>]
 -   Missing precipitation (`P`) values should be filled with 0
 -   Decimal separator is a dot `.`
 
