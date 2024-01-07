@@ -75,8 +75,8 @@ RaDisMod <- function(...) {
 
     mainPanel(
 
-      tags$img(src = "logo_hse.png", height = "5%", width = "5%", align = "right",
-               style = "margin-top:10px;"),
+      # tags$img(src = "logo_hse.png", height = "5%", width = "5%", align = "right",
+      #          style = "margin-top:10px;"),
 
       br(), br(), br(), br(), br(),
       fluidRow(column(4, tableOutput("perf"), offset = 1),
