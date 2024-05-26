@@ -11,8 +11,8 @@ RaDisMod requires an installation of R `4.0.0`. The instruction for the installa
 Once R is installed, RaDisMod can be installed from [GitHub](https://github.com/busemorose/RaDisMod).
 
 ``` r
-if (!require("devtools")) install.packages("devtools") # install devtools package if needed
-devtools::install_github("busemorose/RaDisMod") # install RaDisMod package
+if (!require("remotes")) install.packages("remotes") # install remotes package if needed
+remotes::install_github("busemorose/RaDisMod") # install RaDisMod package
 ```
 ## Launch
 
