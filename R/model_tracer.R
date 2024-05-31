@@ -1,7 +1,7 @@
 model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "KGEABS", "RMSE"),
                          eval = "all", allow_NA = FALSE,
                          warmup_time = 500, warmup_method = c("u_Cin", "u_Cobs", "1_Cin", "1_Cobs"),
-                         max_t, type = c("EMM", "EPM", "DM", "custom"),
+                         max_t, type = c("EMM", "EPM", "PEM", "DM", "custom"),
                          MC = NULL,
                          p1_min, p1_max, p2_min, p2_max) {
 
@@ -55,6 +55,7 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
     if (is.na(max_t)) max_t <- 1
     if (type == "EMM") MC <- MC_EMM(all$p1[n], max_t = max_t)
     if (type == "EPM") MC <- MC_EPM(all$p1[n], all$p2[n], max_t = max_t)
+    if (type == "PEM") MC <- MC_PEM(all$p1[n], all$p2[n], max_t = max_t)
     if (type == "DM") MC <- MC_DM(all$p1[n], all$p2[n], max_t = max_t)
 
     # Convolution

@@ -17,7 +17,7 @@ new <- function(...) {
 
   # Define variables
   file_format <- c("text/csv","text/comma-separated-values, text/plain", ".csv")
-  MC_type <- c("EMM", "EPM", "DM")
+  MC_type <- c("EMM", "EPM", "PEM", "DM")
   WOBJ <- c("KGE", "NSE", "KGENP", "KGEABS", "RMSE")
 
   #------------------ UI ------------------#
