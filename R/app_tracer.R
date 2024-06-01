@@ -19,6 +19,7 @@ new <- function(...) {
   file_format <- c("text/csv","text/comma-separated-values, text/plain", ".csv")
   MC_type <- c("EMM", "EPM", "PEM", "DM")
   WOBJ <- c("KGE", "NSE", "KGENP", "KGEABS", "RMSE")
+  warmup_method <- c("u_Cin", "u_Cobs", "1_Cin", "1_Cobs")
 
   #------------------ UI ------------------#
 
@@ -49,9 +50,12 @@ new <- function(...) {
       fluidRow(
         column(4, fileInput("import", "Import dataset", accept = file_format)),
         column(4, selectInput("type", "Type of MC", choices = MC_type, selected = MC_type[1])),
-        column(4, fileInput("import_mc", "Import MC", accept = file_format))),
+        column(4, selectInput("warmup_m", "Warmup method",
+                              choices = warmup_method, selected = warmup_method[1]))),
       fluidRow(
-        column(4, numericInput("max_t", "Length of MC", value = 1000, min = 1, max = 10000), offset = 4)),
+        column(4, fileInput("import_mc", "Import MC", accept = file_format)),
+        column(4, numericInput("max_t", "Length of MC", value = 1000, min = 1, max = 10000, step = 1)),
+        column(4, numericInput("warmup_t", "Warmup time", value = 1000, min = 1, max = 10000, step = 1))),
       uiOutput("ui_p1"),
       uiOutput("ui_p2"),
       uiOutput("ui_eval_range"),
@@ -139,18 +143,18 @@ new <- function(...) {
     p1_name <- reactive({
       switch(input$type,
              "EMM" = c("T [T]", "T"),
-             "gamma" = c("shape [-]", "shape"),
-             "lnorm" = c("mean [L/T]", "mean"),
-             "triangle" = c("Tm [T]", "Tm"),
+             "EPM" = c("T [T]", "T"),
+             "PEM" = c("T [T]", "T"),
+             "DM" = c("T [T]", "T"),
              "custom" = c("NOT USED", "NOT USED"))
     })
 
     p2_name <- reactive({
       switch(input$type,
              "EMM" = c("NOT USED", "NOT USED"),
-             "gamma" = c("rate [-]", "rate"),
-             "lnorm" = c("mean [L/T]", "sd"),
-             "triangle" = c("alpha [-]", "alpha"),
+             "EPM" = c("n [-]", "n"),
+             "PEM" = c("n [-]", "n"),
+             "DM" = c("DP [-]", "DP"),
              "custom" = c("NOT USED", "NOT USED"))
     })
 
@@ -158,11 +162,13 @@ new <- function(...) {
 
     # Run model with default n_run=1 when modifying UI elements
     observeEvent(c(input$p1, input$p2, input$max_t, input$type,
-                   input$import, input$import_mc, input$eval_range, input$allow_NA), {
+                   input$import, input$import_mc, input$eval_range, input$allow_NA,
+                   input$warmup_m, input$warmup_t), {
                      req(eval_range())
                      x <- model_tracer(df()$obs, df()$Cin, crit = input$obj,
                                        type = isolate(input$type), MC = custom_MC(), max_t = input$max_t,
                                        eval = c(eval_range()[1], eval_range()[2]), allow_NA = input$allow_NA,
+                                       warmup_method = input$warmup_m, warmup_time = input$warmup_t,
                                        p1_min = input$p1, p1_max = input$p1,
                                        p2_min = input$p2, p2_max = input$p2)
 
@@ -177,6 +183,7 @@ new <- function(...) {
         x <- model_tracer(df()$obs, df()$Cin, n_run = input$n_run, crit = input$obj,
                           type = input$type, MC = custom_MC(), max_t = input$max_t,
                           eval = c(eval_range()[1], eval_range()[2]), allow_NA = input$allow_NA,
+                          warmup_method = input$warmup_m, warmup_time = input$warmup_t,
                           p1_min = input$p1_range[1], p1_max = input$p1_range[2],
                           p2_min = input$p2_range[1], p2_max = input$p2_range[2])
         res$best <- x$best
@@ -234,11 +241,11 @@ new <- function(...) {
                                         alpha = 0.2, fill = unname(grDevices::palette.colors()[3]))} +
         annotate("segment",
                  x = eval_range()[1], xend = eval_range()[1],
-                 y = -1, yend = res$best$obs[eval_range()[1]],
+                 y = -50, yend = res$best$obs[eval_range()[1]],
                  color = unname(grDevices::palette.colors()[2]), alpha = 0.5, linetype = "dashed") +
         annotate("segment",
                  x = eval_range()[2], xend = eval_range()[2],
-                 y = -1, yend = res$best$obs[eval_range()[2]],
+                 y = -50, yend = res$best$obs[eval_range()[2]],
                  color = unname(grDevices::palette.colors()[2]), alpha = 0.5, linetype = "dashed") +
         geom_line(aes(t, value, color = name, linetype = name, linewidth = name, alpha = name)) +
         geom_point(aes(t, value, color = name, size = name, alpha = name), shape = 15) +
