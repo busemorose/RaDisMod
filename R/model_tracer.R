@@ -25,9 +25,9 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
 
   # Add warmup values
   if (warmup_method == "u_Cin") warmup_val <- rep(mean(Cin), warmup_time)
-  if (warmup_method == "u_Cobs") warmup_val <- rep(mean(Cobs), warmup_time)
+  if (warmup_method == "u_Cobs") warmup_val <- rep(mean(obs), warmup_time)
   if (warmup_method == "1_Cin") warmup_val <- rep(Cin[1], warmup_time)
-  if (warmup_method == "1_Cobs") warmup_val <- rep(Cobs[1], warmup_time)
+  if (warmup_method == "1_Cobs") warmup_val <- rep(obs[1], warmup_time)
 
   Cin_warmup <- c(warmup_val, Cin)
 
