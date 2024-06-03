@@ -239,14 +239,14 @@ new <- function(...) {
         {if (input$ci_mode) geom_ribbon(data = tidyr::tibble(t = 1:length(res$best$sim), CI_min, CI_max),
                                         aes(x = t, ymin = CI_min, ymax = CI_max),
                                         alpha = 0.2, fill = unname(grDevices::palette.colors()[3]))} +
-        # annotate("segment",
-        #          x = eval_range()[1], xend = eval_range()[1],
-        #          y = -50, yend = res$best$obs[eval_range()[1]],
-        #          color = unname(grDevices::palette.colors()[2]), alpha = 0.5, linetype = "dashed") +
-        # annotate("segment",
-        #          x = eval_range()[2], xend = eval_range()[2],
-        #          y = -50, yend = res$best$obs[eval_range()[2]],
-        #          color = unname(grDevices::palette.colors()[2]), alpha = 0.5, linetype = "dashed") +
+        annotate("segment",
+                 x = eval_range()[1], xend = eval_range()[1],
+                 y = -50, yend = res$best$obs[eval_range()[1]],
+                 color = unname(grDevices::palette.colors()[2]), alpha = 0.5, linetype = "dashed") +
+        annotate("segment",
+                 x = eval_range()[2], xend = eval_range()[2],
+                 y = -50, yend = res$best$obs[eval_range()[2]],
+                 color = unname(grDevices::palette.colors()[2]), alpha = 0.5, linetype = "dashed") +
         geom_line(aes(t, value, color = name, linetype = name, linewidth = name, alpha = name)) +
         geom_point(aes(t, value, color = name, size = name, alpha = name), shape = 15) +
         scale_color_manual(name = "", values = unname(grDevices::palette.colors()[c(2, 1, 3)])) +
@@ -255,8 +255,8 @@ new <- function(...) {
         scale_alpha_manual(name = "", values = c(0.75, 1, 1)) +
         scale_size_manual(name = "", values = c(0, 2, 0)) +
         coord_cartesian(xlim = c(1, length(res$best$sim)),
-                        ylim = c(min(c(res$best$obs, mean_distrib, na.rm = TRUE)),
-                                 max(c(res$best$obs, mean_distrib, na.rm = TRUE)))) +
+                        ylim = c(min(c(res$best$obs, mean_distrib), na.rm = TRUE),
+                                 max(c(res$best$obs, mean_distrib), na.rm = TRUE))) +
         scale_y_continuous(expand = expansion(mult = c(0.13, 0.08))) +
         xlab("t [T]") +
         ylab(expression(paste("Discharge [L"~T^-1, "]"))) +
