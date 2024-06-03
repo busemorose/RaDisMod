@@ -255,7 +255,8 @@ new <- function(...) {
         scale_alpha_manual(name = "", values = c(0.75, 1, 1)) +
         scale_size_manual(name = "", values = c(0, 2, 0)) +
         coord_cartesian(xlim = c(1, length(res$best$sim)),
-                        ylim = c(min(c(res$best$obs, mean_distrib)), max(c(res$best$obs, mean_distrib)))) +
+                        ylim = c(min(c(res$best$obs, mean_distrib, na.rm = TRUE)),
+                                 max(c(res$best$obs, mean_distrib, na.rm = TRUE)))) +
         scale_y_continuous(expand = expansion(mult = c(0.13, 0.08))) +
         xlab("t [T]") +
         ylab(expression(paste("Discharge [L"~T^-1, "]"))) +
