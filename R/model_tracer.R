@@ -2,11 +2,26 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
                          eval = "all", allow_NA = FALSE,
                          warmup_time = 500, warmup_method = c("u_Cin", "u_Cobs", "1_Cin", "1_Cobs"),
                          max_t, type = c("EMM", "EPM", "PEM", "DM", "custom"),
-                         MC = NULL,
-                         p1_min, p1_max, p2_min, p2_max) {
+                         MC = NULL, n_component = c(1, 2, 3),
+                         p1_min, p1_max, p2_min, p2_max, ratio_min = NULL, ratio_max = NULL) {
+
+  # Get number of model components
+  n_component <- n_component[1]
+
+  # Assign default ratio between 0 and 1
+  ratio_min <- rep(0, n_component)
+  ratio_max <- rep(1, n_component)
 
   # Check errors
-  if (type == "custom" & is.null(MC)) stop("MC is set to custom but values are missing.")
+  if ("custom" %in% type & is.null(MC)) stop("MC is set to custom but values are missing.")
+  if (n_component < 1 | n_component > 4) stop("Number of component should be between 1 and 4")
+  if (length(type) != n_component) stop("Number of component is not equal to number of type")
+  if (length(p1_min) != n_component) stop("Number of component is not equal to number of p1_min")
+  if (length(p1_max) != n_component) stop("Number of component is not equal to number of p1_max")
+  if (length(p2_min) != n_component) stop("Number of component is not equal to number of p2_min")
+  if (length(p2_max) != n_component) stop("Number of component is not equal to number of p2_max")
+  if (length(ratio_min) != n_component) stop("Number of component is not equal to number of ratio_min")
+  if (length(ratio_max) != n_component) stop("Number of component is not equal to number of ratio_max")
 
   # Length of obs
   l_obs <- length(obs)
@@ -15,7 +30,7 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
   if (eval[1] == "all") eval_r <- 1:l_obs else eval_r <- eval[1]:eval[2]
 
   # Get MC function
-  type <- match.arg(type)
+  if (n_component == 1) type <- match.arg(type)
 
   # Get objective function
   crit <- match.arg(crit)
@@ -33,34 +48,59 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
 
   # Initialise output
   all <- list("obj" = rep(NA_real_, n_run),
-              "p1" = rep(NA_real_, n_run),
-              "p2" = rep(NA_real_, n_run),
+              "p1" = list(),
+              "p2" = list(),
+              "ratio" = list(),
               "sim" = vector(mode = "list", length = n_run))
+
+  for (n in seq(n_component)) {
+    all$p1[[type[n]]] <- rep(NA_real_, n_run)
+    all$p2[[type[n]]] <- rep(NA_real_, n_run)
+    all$ratio[[type[n]]] <- rep(NA_real_, n_run)
+  }
 
   best <- list("obs" = obs,
                "Cin" = Cin,
                "sim" = numeric(l_obs),
                "obj" = NA_real_,
                "obj_name" = crit,
-               "p1" = NA_real_,
-               "p2" = NA_real_)
+               "p1" = list(),
+               "p2" = list(),
+               "ratio" = list())
+
+  for (c in seq(n_component)) {
+    best$p1[[type[c]]] <- NA_real_
+    best$p2[[type[c]]] <- NA_real_
+    best$ratio[[type[c]]] <- NA_real_
+  }
 
   # Sample parameters
-  all$p1 <- stats::runif(n_run, p1_min, p1_max)
-  all$p2 <- stats::runif(n_run, p2_min, p2_max)
+  for (c in seq(n_component)) {
+    all$p1[[type[c]]] <- stats::runif(n_run, p1_min[c], p1_max[c])
+    all$p2[[type[c]]] <- stats::runif(n_run, p2_min[c], p2_max[c])
+    all$ratio[[type[c]]] <- stats::runif(n_run, ratio_min[c], ratio_max[c])
+  }
 
-  # Loop
+  # Normalise ratio to 1
+  ratio_sum <- Reduce(`+`, all$ratio)
+  for (c in seq(n_component)) {
+    all$ratio[[type[c]]] <- all$ratio[[type[c]]] / ratio_sum
+  }
+
+  # Loop ------------------------------------------------------
   for (n in seq(1, n_run)) {
+
     # Calculate MC
     if (is.na(max_t)) max_t <- 1
-    if (type == "EMM") MC <- MC_EMM(all$p1[n], max_t = max_t)
-    if (type == "EPM") MC <- MC_EPM(all$p1[n], all$p2[n], max_t = max_t)
-    if (type == "PEM") MC <- MC_PEM(all$p1[n], all$p2[n], max_t = max_t)
-    if (type == "DM") MC <- MC_DM(all$p1[n], all$p2[n], max_t = max_t)
+    sim_list <- list()
 
-    # Convolution
-    sim <- rev(stats::convolve(rev(MC), Cin_warmup, conj = TRUE, type = "open"))
-    sim <- sim[(warmup_time + 1):(warmup_time + l_obs)]
+    for (c in seq(n_component)) {
+      MC <- do.call(paste0("MC_", type[c]), list(all$p1[[type[c]]][n], all$p2[[type[c]]][n], max_t))
+      sim_list[[c]] <- rev(stats::convolve(rev(MC), Cin_warmup, conj = TRUE, type = "open"))
+      sim_list[[c]] <- sim_list[[c]][(warmup_time + 1):(warmup_time + l_obs)] * all$ratio[[type[c]]][n]
+    }
+
+    sim <- Reduce(`+`, sim_list)
 
     # Calculte score
     if (crit == "KGE") obj <- KGE(sim[eval_r], obs[eval_r], allow_NA = allow_NA)
@@ -81,8 +121,14 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
       best$MC <- c(0, MC[MC >= max(MC / 100)])
       best$obj <- obj
       best$sim <- sim
-      best$p1 <- all$p1[n]
-      best$p2 <- all$p2[n]
+      best$p1 <- lapply(all$p1, `[`, n)
+      best$p2 <- lapply(all$p2, `[`, n)
+      best$ratio <- lapply(all$ratio, `[`, n)
+      message(paste(paste0(lapply(best$ratio, "round", 3), " * ",
+                           type, "[", lapply(best$p1, "round", 2),
+                           "; ", lapply(best$p2, "round", 2),
+                           "]"),
+                    collapse = " + "))
       message(paste0(crit, ": ", round(best$obj, 5)))
     }
   }
