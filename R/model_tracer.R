@@ -9,8 +9,10 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
   n_component <- n_component[1]
 
   # Assign default ratio between 0 and 1
-  ratio_min <- rep(0, n_component)
-  ratio_max <- rep(1, n_component)
+  if (is.null(ratio_min) | is.null(ratio_max)) {
+    ratio_min <- rep(0, n_component)
+    ratio_max <- rep(1, n_component)
+  }
 
   # Check errors
   if ("custom" %in% type & is.null(MC)) stop("MC is set to custom but values are missing.")
@@ -124,12 +126,12 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
       best$p1 <- lapply(all$p1, `[`, n)
       best$p2 <- lapply(all$p2, `[`, n)
       best$ratio <- lapply(all$ratio, `[`, n)
-      message(paste(paste0(lapply(best$ratio, "round", 3), " * ",
+      message(paste0(crit, ": ", round(best$obj, 5), " ––– ",
+                     paste(paste0(lapply(best$ratio, "round", 3), " * ",
                            type, "[", lapply(best$p1, "round", 2),
                            "; ", lapply(best$p2, "round", 2),
                            "]"),
-                    collapse = " + "))
-      message(paste0(crit, ": ", round(best$obj, 5)))
+                    collapse = " + ")))
     }
   }
 

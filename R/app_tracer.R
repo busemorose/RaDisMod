@@ -25,6 +25,8 @@ new <- function(...) {
 
   ui <- fluidPage(
 
+    shinyWidgets::chooseSliderSkin("Flat", "#202020"),
+
     # CSS
     tags$head(
       # Note the wrapping of the string in HTML()
@@ -49,15 +51,23 @@ new <- function(...) {
 
       fluidRow(
         column(4, fileInput("import", "Import dataset", accept = file_format)),
-        column(4, selectInput("type", "Type of MC", choices = MC_type, selected = MC_type[1])),
+        column(4, shinyWidgets::pickerInput("type", "Type of MC", choices = MC_type,selected = MC_type[1],
+                                            options = shinyWidgets::pickerOptions(
+                                              actionsBox = TRUE,
+                                              size = 10,
+                                              selectedTextFormat = "count > 3"
+                                            ), multiple = TRUE)),
         column(4, selectInput("warmup_m", "Warmup method",
                               choices = warmup_method, selected = warmup_method[1]))),
       fluidRow(
         column(4, fileInput("import_mc", "Import MC", accept = file_format)),
         column(4, numericInput("max_t", "Length of MC", value = 1000, min = 1, max = 10000, step = 1)),
         column(4, numericInput("warmup_t", "Warmup time", value = 1000, min = 1, max = 10000, step = 1))),
-      uiOutput("ui_p1"),
-      uiOutput("ui_p2"),
+      fluidRow(
+        column(4, uiOutput("ui_p1")),
+        column(4, uiOutput("ui_p2")),
+        column(4, uiOutput("ui_ratio"))
+      ),
       uiOutput("ui_eval_range"),
 
       h3("Parameter optimisation"),
@@ -69,8 +79,11 @@ new <- function(...) {
         column(3,
                uiOutput("ui_percentile_min"),
                uiOutput("ui_percentile_max"))),
-      uiOutput("ui_p1_range"),
-      uiOutput("ui_p2_range"),
+      fluidRow(
+        column(5, uiOutput("ui_p1_range")),
+        column(5, uiOutput("ui_p2_range")),
+        column(2, uiOutput("ui_ratio_range"))
+      ),
       actionButton("run", "Run")
 
     ),
@@ -81,18 +94,21 @@ new <- function(...) {
       #          style = "margin-top:10px;"),
 
       br(), br(),
-      fluidRow(column(4, tableOutput("perf"), offset = 1),
-               column(1, br(), shinyjs::hidden(downloadButton("download_results", "Download results")), offset = 1)),
+      fluidRow(column(4,
+                      tableOutput("perf"),
+                      shinyjs::hidden(downloadButton("download_results", "Download results"))),
+               column(6, shinyjs::hidden(verbatimTextOutput("msg_obj", placeholder = TRUE)), offset = 2)
+               ),
       br(), br(),
       fluidRow(column(12, plotOutput("plot"))),
       br(),
       fluidRow(
         column(2,
-               fluidRow(shinyjs::hidden(verbatimTextOutput("msg_obj", placeholder = TRUE))),
                fluidRow(shinyjs::hidden(numericInput("min_obj", "Min obj.", value = 0, step = 0.1))),
                fluidRow(shinyjs::hidden(textOutput("n_sim")))),
-        column(3, plotOutput("p1_sa", height = "300px"), offset = 1),
-        column(3, plotOutput("p2_sa", height = "300px")))
+        column(3, uiOutput("p1_sa"), offset = 1),
+        column(3, uiOutput("p2_sa")),
+        column(3, uiOutput("ratio_sa")))
 
     )
 
@@ -127,7 +143,7 @@ new <- function(...) {
     })
 
     custom_MC <- reactive({
-      if (input$type != "custom") {NULL} else {
+      if (!("custom" %in% input$type)) {NULL} else {
         req(input$import_mc)
         scan(input$import_mc$datapath)
       }
@@ -141,51 +157,87 @@ new <- function(...) {
                           all = NA)
 
     p1_name <- reactive({
-      switch(input$type,
-             "EMM" = c("T [T]", "T"),
-             "EPM" = c("T [T]", "T"),
-             "PEM" = c("T [T]", "T"),
-             "DM" = c("T [T]", "T"),
-             "custom" = c("NOT USED", "NOT USED"))
+      dplyr::case_when(input$type == "EMM" ~ list(c("T [T]", "T")),
+                       input$type == "EPM" ~ list(c("T [T]", "T")),
+                       input$type == "PEM" ~ list(c("T [T]", "T")),
+                       input$type == "DM" ~ list(c("T [T]", "T")),
+                       input$type == "custom" ~ list(c("NOT USED", "NOT USED")))
     })
 
     p2_name <- reactive({
-      switch(input$type,
-             "EMM" = c("NOT USED", "NOT USED"),
-             "EPM" = c("n [-]", "n"),
-             "PEM" = c("n [-]", "n"),
-             "DM" = c("DP [-]", "DP"),
-             "custom" = c("NOT USED", "NOT USED"))
+      dplyr::case_when(input$type == "EMM" ~ list(c("NOT USED", "NOT USED")),
+                       input$type == "EPM" ~ list(c("n [-]", "n")),
+                       input$type == "PEM" ~ list(c("n [-]", "n")),
+                       input$type == "DM" ~ list(c("DP [-]", "DP")),
+                       input$type == "custom" ~ list(c("NOT USED", "NOT USED")))
     })
+
+    n_component <- reactive(length(input$type))
 
     # Reactive functions ------------------------------------------------------
 
     # Run model with default n_run=1 when modifying UI elements
-    observeEvent(c(input$p1, input$p2, input$max_t, input$type,
+    observeEvent(c(lapply(names(input)[grep("p1_|p2_|ratio_", names(input))], function(name) input[[name]]),
+                   input$max_t,
                    input$import, input$import_mc, input$eval_range, input$allow_NA,
                    input$warmup_m, input$warmup_t), {
-                     req(eval_range())
+                     req(eval_range(), input$type)
+
+                     # Get input according to number of component
+                     p1_val <- NULL
+                     p2_val <- NULL
+                     ratio <- NULL
+                     for (n in seq(n_component())) {
+                       p1_val <- c(p1_val, input[[paste0("p1_", input$type[n])]])
+                       p2_val <- c(p2_val, input[[paste0("p2_", input$type[n])]])
+                       ratio <- c(ratio, input[[paste0("ratio_", input$type[n])]])
+                     }
+
+                     # Run model function
                      x <- model_tracer(df()$obs, df()$Cin, crit = input$obj,
                                        type = isolate(input$type), MC = custom_MC(), max_t = input$max_t,
                                        eval = c(eval_range()[1], eval_range()[2]), allow_NA = input$allow_NA,
                                        warmup_method = input$warmup_m, warmup_time = input$warmup_t,
-                                       p1_min = input$p1, p1_max = input$p1,
-                                       p2_min = input$p2, p2_max = input$p2)
+                                       n_component = n_component(),
+                                       p1_min = p1_val, p1_max = p1_val,
+                                       p2_min = p2_val, p2_max = p2_val,
+                                       ratio_min = ratio, ratio_max = ratio)
 
                      res$best <- x$best
                    })
 
     # Run model with iterations when pressing "Run" button
     observeEvent(input$run, {
+      req(input$type)
       waiter$show()
       withCallingHandlers({ # this update msg_obj with message() from the model function
         shinyjs::html("msg_obj", "")
+
+        # Get input according to number of component
+        p1_min_val <- NULL
+        p1_max_val <- NULL
+        p2_min_val <- NULL
+        p2_max_val <- NULL
+        ratio_min <- NULL
+        ratio_max <- NULL
+        for (n in seq(n_component())) {
+          p1_min_val <- c(p1_min_val, input[[paste0("p1_range_", input$type[n])]][1])
+          p1_max_val <- c(p1_max_val, input[[paste0("p1_range_", input$type[n])]][2])
+          p2_min_val <- c(p2_min_val, input[[paste0("p2_range_", input$type[n])]][1])
+          p2_max_val <- c(p2_max_val, input[[paste0("p2_range_", input$type[n])]][2])
+          ratio_min <- c(ratio_min, input[[paste0("ratio_range_", input$type[n])]][1])
+          ratio_max <- c(ratio_max, input[[paste0("ratio_range_", input$type[n])]][2])
+        }
+
+        # Run model function
         x <- model_tracer(df()$obs, df()$Cin, n_run = input$n_run, crit = input$obj,
                           type = input$type, MC = custom_MC(), max_t = input$max_t,
                           eval = c(eval_range()[1], eval_range()[2]), allow_NA = input$allow_NA,
                           warmup_method = input$warmup_m, warmup_time = input$warmup_t,
-                          p1_min = input$p1_range[1], p1_max = input$p1_range[2],
-                          p2_min = input$p2_range[1], p2_max = input$p2_range[2])
+                          n_component = n_component(),
+                          p1_min = p1_min_val, p1_max = p1_max_val,
+                          p2_min = p2_min_val, p2_max = p2_max_val,
+                          ratio_min = ratio_min, ratio_max = ratio_max)
         res$best <- x$best
         res$all <- x$all
       },
@@ -193,17 +245,12 @@ new <- function(...) {
         shinyjs::html(id = "msg_obj", html = m$message, add = TRUE)
       })
 
-
-      updateSliderInput(session, "p1", value = res$best$p1)
-      updateSliderInput(session, "p2", value = res$best$p2)
-    })
-
-    # Update slide depending on MC type
-    observeEvent(input$type, {
-      updateSliderInput(session, "p1", label = HTML(p1_name()[1]))
-      updateSliderInput(session, "p2", label = HTML(p2_name()[1]))
-      updateSliderInput(session, "p1_range", label = HTML(p1_name()[1]))
-      updateSliderInput(session, "p2_range", label = HTML(p2_name()[1]))
+      for (n in seq(n_component())) {
+        MC <- input$type[n]
+        updateSliderInput(session, paste0("p1_", MC), value = res$best$p1[[MC]])
+        updateSliderInput(session, paste0("p2_", MC), value = res$best$p2[[MC]])
+        updateSliderInput(session, paste0("ratio_", MC), value = res$best$ratio[[MC]])
+      }
     })
 
     # Outputs -----------------------------------------------------------------
@@ -267,30 +314,86 @@ new <- function(...) {
 
     })
 
-    # p1 parameter plot
-    output$p1_sa <- renderPlot({
-      req(res$all)
-      tidyr::tibble(p1 = res$all$p1, obj = res$all$obj) |>
-        dplyr::filter(obj >= input$min_obj) |>
-        ggplot(aes(p1, obj)) +
-        geom_point() +
-        xlab(p1_name()[2]) +
-        ylab(isolate(res$best$obj_name)) +
-        theme_bw(base_size = 16) +
-        theme(axis.title.y = element_blank()) # Remove Y axis title
+    # SA plots
+
+    output$p1_sa <- renderUI({
+      plot_output_list <- lapply(seq(n_component()), function(n) {
+        plotOutput(paste0("p1_sa_", input$type[n]), height = "300px")
+      })
+
+      # Convert the list to a tagList - this is necessary for the list of items
+      # to display properly.
+      do.call(tagList, plot_output_list)
     })
 
-    # p2 parameter plot
-    output$p2_sa <- renderPlot({
+    output$p2_sa <- renderUI({
+      plot_output_list <- lapply(seq(n_component()), function(n) {
+        plotOutput(paste0("p2_sa_", input$type[n]), height = "300px")
+      })
+
+      # Convert the list to a tagList - this is necessary for the list of items
+      # to display properly.
+      do.call(tagList, plot_output_list)
+    })
+
+    output$ratio_sa <- renderUI({
+      plot_output_list <- lapply(seq(n_component()), function(n) {
+        plotOutput(paste0("ratio_sa_", input$type[n]), height = "300px")
+      })
+
+      # Convert the list to a tagList - this is necessary for the list of items
+      # to display properly.
+      do.call(tagList, plot_output_list)
+    })
+
+    observe({
       req(res$all)
-      tidyr::tibble(p2 = res$all$p2, obj = res$all$obj) |>
-        dplyr::filter(obj >= input$min_obj) |>
-        ggplot(aes(p2, obj)) +
-        geom_point() +
-        xlab(p2_name()[2]) +
-        ylab(isolate(res$best$obj_name)) +
-        theme_bw(base_size = 16) +
-        theme(axis.title.y = element_blank()) # Remove Y axis title
+      req(n_component() == length(res$all$ratio))
+
+      # p1_sa
+      lapply(seq(n_component()), function(n) {
+        p <- tidyr::tibble(p1 = res$all$p1[[input$type[n]]], obj = res$all$obj) |>
+          dplyr::filter(obj >= input$min_obj) |>
+          ggplot(aes(p1, obj)) +
+          geom_point() +
+          xlab(p1_name()[[n]][2]) +
+          ylab(isolate(res$best$obj_name)) +
+          ggtitle(input$type[n]) +
+          theme_bw(base_size = 16) +
+          theme(axis.title.y = element_blank())
+
+        output[[paste0("p1_sa_", input$type[n])]] <- renderPlot(p)
+      })
+
+      # p2_sa
+      lapply(seq(n_component()), function(n) {
+        p <- tidyr::tibble(p2 = res$all$p2[[input$type[n]]], obj = res$all$obj) |>
+          dplyr::filter(obj >= input$min_obj) |>
+          ggplot(aes(p2, obj)) +
+          geom_point() +
+          xlab(p2_name()[[n]][2]) +
+          ylab(isolate(res$best$obj_name)) +
+          ggtitle(input$type[n]) +
+          theme_bw(base_size = 16) +
+          theme(axis.title.y = element_blank())
+
+        output[[paste0("p2_sa_", input$type[n])]] <- renderPlot(p)
+      })
+
+      # ratio_sa
+      lapply(seq(n_component()), function(n) {
+        p <- tidyr::tibble(ratio = res$all$ratio[[input$type[n]]], obj = res$all$obj) |>
+          dplyr::filter(obj >= input$min_obj) |>
+          ggplot(aes(ratio, obj)) +
+          geom_point() +
+          xlab("ratio") +
+          ylab(isolate(res$best$obj_name)) +
+          ggtitle(input$type[n]) +
+          theme_bw(base_size = 16) +
+          theme(axis.title.y = element_blank())
+
+        output[[paste0("ratio_sa_", input$type[n])]] <- renderPlot(p)
+      })
     })
 
     # Table
@@ -327,39 +430,63 @@ new <- function(...) {
     # UI output ---------------------------------------------------------------
 
     output$ui_p1 <- renderUI({
-      sliderInput("p1",
-                  "Tm [T]",
-                  value = 6,
-                  min = 1,
-                  max = 100,
-                  step = 0.1)
+      req(input$type)
+      gnr <- function(n_component, type) {
+        sliderInput(paste0("p1_", type[n_component]),
+                    HTML(p1_name()[[n_component]][1]), value = 6, min = 1, max = 100, step = 0.1)
+      }
+      x <- lapply(seq(n_component()), function(n) gnr(n, input$type))
+      return(x)
     })
 
     output$ui_p2 <- renderUI({
-      sliderInput("p2",
-                  "alpha [-]",
-                  value = 3,
-                  min = 0.1,
-                  max = 20,
-                  step = 0.1)
+      req(input$type)
+      gnr <- function(n_component, type) {
+        sliderInput(paste0("p2_", type[n_component]),
+                    HTML(p2_name()[[n_component]][1]), value = 3, min = 0.1, max = 20, step = 0.1)
+      }
+      x <- lapply(seq(n_component()), function(n) gnr(n, input$type))
+      return(x)
+    })
+
+    output$ui_ratio <- renderUI({
+      req(input$type)
+      gnr <- function(n_component, type) {
+        numericInput(paste0("ratio_", type[n_component]),
+                     paste0("ratio_", type[n_component]), value = 1, min = 0, step = 0.01)
+      }
+      x <- lapply(seq(n_component()), function(n) gnr(n, input$type))
+      return(x)
     })
 
     output$ui_p1_range <- renderUI({
-      sliderInput("p1_range",
-                  "Tm [T]",
-                  value = c(1, 100),
-                  min = 1,
-                  max = 100,
-                  step = 0.1)
+      req(input$type)
+      gnr <- function(n_component, type) {
+        sliderInput(paste0("p1_range_", type[n_component]),
+                    HTML(p1_name()[[n_component]][1]), value = c(1, 100), min = 1, max = 100, step = 0.1)
+      }
+      x <- lapply(seq(n_component()), function(n) gnr(n, input$type))
+      return(x)
     })
 
     output$ui_p2_range <- renderUI({
-      sliderInput("p2_range",
-                  "alpha [-]",
-                  value = c(0.1, 20),
-                  min = 0.1,
-                  max = 20,
-                  step = 0.1)
+      req(input$type)
+      gnr <- function(n_component, type) {
+        sliderInput(paste0("p2_range_", type[n_component]),
+                    HTML(p2_name()[[n_component]][1]), value = c(0.1, 20), min = 0.1, max = 20, step = 0.1)
+      }
+      x <- lapply(seq(n_component()), function(n) gnr(n, input$type))
+      return(x)
+    })
+
+    output$ui_ratio_range <- renderUI({
+      req(input$type)
+      gnr <- function(n_component, type) {
+        sliderInput(paste0("ratio_range_", type[n_component]),
+                    paste0("ratio_", type[n_component]), value = c(0, 1), min = 0, max = 1, step = 0.1)
+      }
+      x <- lapply(seq(n_component()), function(n) gnr(n, input$type))
+      return(x)
     })
 
     # CI mode
