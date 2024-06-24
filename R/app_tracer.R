@@ -433,7 +433,7 @@ new <- function(...) {
       req(input$type)
       gnr <- function(n_component, type) {
         sliderInput(paste0("p1_", type[n_component]),
-                    HTML(p1_name()[[n_component]][1]), value = 6, min = 1, max = 100, step = 0.1)
+                    HTML(p1_name()[[n_component]][1]), value = 6, min = 1, max = 1000, step = 0.1)
       }
       x <- lapply(seq(n_component()), function(n) gnr(n, input$type))
       return(x)
@@ -463,7 +463,7 @@ new <- function(...) {
       req(input$type)
       gnr <- function(n_component, type) {
         sliderInput(paste0("p1_range_", type[n_component]),
-                    HTML(p1_name()[[n_component]][1]), value = c(1, 100), min = 1, max = 100, step = 0.1)
+                    HTML(p1_name()[[n_component]][1]), value = c(1, 1000), min = 1, max = 1000, step = 0.1)
       }
       x <- lapply(seq(n_component()), function(n) gnr(n, input$type))
       return(x)
