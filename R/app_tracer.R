@@ -473,7 +473,7 @@ new <- function(...) {
       req(input$type)
       gnr <- function(n_component, type) {
         sliderInput(paste0("p2_range_", type[n_component]),
-                    HTML(p2_name()[[n_component]][1]), value = c(0.001, 20), min = 0.1, max = 20, step = 0.001)
+                    HTML(p2_name()[[n_component]][1]), value = c(0.001, 20), min = 0.001, max = 20, step = 0.001)
       }
       x <- lapply(seq(n_component()), function(n) gnr(n, input$type))
       return(x)
