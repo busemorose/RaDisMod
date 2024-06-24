@@ -1,12 +1,12 @@
 model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "KGEABS", "RMSE"),
                          eval = "all", allow_NA = FALSE,
                          warmup_time = 500, warmup_method = c("u_Cin", "u_Cobs", "1_Cin", "1_Cobs"),
-                         max_t, type = c("EMM", "EPM", "PEM", "DM", "custom"),
-                         MC = NULL, n_component = c(1, 2, 3),
+                         max_t, type, # "EMM", "EPM", "PEM", "DM", "custom"
+                         MC = NULL,
                          p1_min, p1_max, p2_min, p2_max, ratio_min = NULL, ratio_max = NULL) {
 
   # Get number of model components
-  n_component <- n_component[1]
+  n_component <- length(type)
 
   # Assign default ratio between 0 and 1
   if (is.null(ratio_min) | is.null(ratio_max)) {
@@ -31,9 +31,6 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
   # Optimisation part -- "all" is default and return the whole time series
   if (eval[1] == "all") eval_r <- 1:l_obs else eval_r <- eval[1]:eval[2]
 
-  # Get MC function
-  if (n_component == 1) type <- match.arg(type)
-
   # Get objective function
   crit <- match.arg(crit)
 
@@ -55,10 +52,10 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
               "ratio" = list(),
               "sim" = vector(mode = "list", length = n_run))
 
-  for (n in seq(n_component)) {
-    all$p1[[type[n]]] <- rep(NA_real_, n_run)
-    all$p2[[type[n]]] <- rep(NA_real_, n_run)
-    all$ratio[[type[n]]] <- rep(NA_real_, n_run)
+  for (c in seq(n_component)) {
+    all$p1[[paste0(type[c], "_", c)]] <- rep(NA_real_, n_run)
+    all$p2[[paste0(type[c], "_", c)]] <- rep(NA_real_, n_run)
+    all$ratio[[paste0(type[c], "_", c)]] <- rep(NA_real_, n_run)
   }
 
   best <- list("obs" = obs,
@@ -71,22 +68,22 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
                "ratio" = list())
 
   for (c in seq(n_component)) {
-    best$p1[[type[c]]] <- NA_real_
-    best$p2[[type[c]]] <- NA_real_
-    best$ratio[[type[c]]] <- NA_real_
+    best$p1[[paste0(type[c], "_", c)]] <- NA_real_
+    best$p2[[paste0(type[c], "_", c)]] <- NA_real_
+    best$ratio[[paste0(type[c], "_", c)]] <- NA_real_
   }
 
   # Sample parameters
   for (c in seq(n_component)) {
-    all$p1[[type[c]]] <- stats::runif(n_run, p1_min[c], p1_max[c])
-    all$p2[[type[c]]] <- stats::runif(n_run, p2_min[c], p2_max[c])
-    all$ratio[[type[c]]] <- stats::runif(n_run, ratio_min[c], ratio_max[c])
+    all$p1[[paste0(type[c], "_", c)]] <- stats::runif(n_run, p1_min[c], p1_max[c])
+    all$p2[[paste0(type[c], "_", c)]] <- stats::runif(n_run, p2_min[c], p2_max[c])
+    all$ratio[[paste0(type[c], "_", c)]] <- stats::runif(n_run, ratio_min[c], ratio_max[c])
   }
 
   # Normalise ratio to 1
   ratio_sum <- Reduce(`+`, all$ratio)
   for (c in seq(n_component)) {
-    all$ratio[[type[c]]] <- all$ratio[[type[c]]] / ratio_sum
+    all$ratio[[paste0(type[c], "_", c)]] <- all$ratio[[paste0(type[c], "_", c)]] / ratio_sum
   }
 
   # Loop ------------------------------------------------------
@@ -97,9 +94,9 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
     sim_list <- list()
 
     for (c in seq(n_component)) {
-      MC <- do.call(paste0("MC_", type[c]), list(all$p1[[type[c]]][n], all$p2[[type[c]]][n], max_t))
+      MC <- do.call(paste0("MC_", type[c]), list(all$p1[[paste0(type[c], "_", c)]][n], all$p2[[paste0(type[c], "_", c)]][n], max_t))
       sim_list[[c]] <- rev(stats::convolve(rev(MC), Cin_warmup, conj = TRUE, type = "open"))
-      sim_list[[c]] <- sim_list[[c]][(warmup_time + 1):(warmup_time + l_obs)] * all$ratio[[type[c]]][n]
+      sim_list[[c]] <- sim_list[[c]][(warmup_time + 1):(warmup_time + l_obs)] * all$ratio[[paste0(type[c], "_", c)]][n]
     }
 
     sim <- Reduce(`+`, sim_list)
