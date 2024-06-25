@@ -100,6 +100,7 @@ new <- function(...) {
                column(6, shinyjs::hidden(verbatimTextOutput("msg_obj", placeholder = TRUE)), offset = 2)
       ),
       br(), br(),
+      fluidRow(column(12, uiOutput("ui_plot_slider"))),
       fluidRow(column(12, plotOutput("plot"))),
       br(),
       fluidRow(
@@ -117,24 +118,6 @@ new <- function(...) {
   #------------------ Server ------------------#
 
   server <- function(input, output, session) {
-
-    observeEvent(input$type, {
-      cur_type <- isolate(input$type)
-      new_suffix <- add_unique_suffix(sub("_.*", "", cur_type))
-      all_choices <- c(MC_type, new_suffix)
-
-      shinyWidgets::updatePickerInput(session, inputId = "type",
-                                      choices = all_choices,
-                                      selected = cur_type)
-    })
-
-    type <- reactive({
-      x <- sub("_.*", "", input$type)
-      names(x) <- add_unique_suffix(x, 0)
-      return(x)
-    })
-
-    type_name <- reactive(names(type()))
 
     # Hide some UI elements if no dataset
     observe({
@@ -192,7 +175,26 @@ new <- function(...) {
 
     n_component <- reactive(length(type()))
 
+    type <- reactive({
+      x <- sub("_.*", "", input$type)
+      names(x) <- add_unique_suffix(x, 0)
+      return(x)
+    })
+
+    type_name <- reactive(names(type()))
+
     # Reactive functions ------------------------------------------------------
+
+    # Update available type depending on the current selection
+    observeEvent(input$type, {
+      cur_type <- isolate(input$type)
+      new_suffix <- add_unique_suffix(sub("_.*", "", cur_type))
+      all_choices <- c(MC_type, new_suffix)
+
+      shinyWidgets::updatePickerInput(session, inputId = "type",
+                                      choices = all_choices,
+                                      selected = cur_type)
+    })
 
     # Run model with default n_run=1 when modifying UI elements
     observeEvent(c(lapply(names(input)[grep("p1_|p2_|ratio_", names(input))], function(name) input[[name]]),
@@ -227,6 +229,7 @@ new <- function(...) {
     observeEvent(input$run, {
       req(type())
       waiter$show()
+      freezeReactiveValue(input, "plot_dotty")
       withCallingHandlers({ # this update msg_obj with message() from the model function
         shinyjs::html("msg_obj", "")
 
@@ -317,12 +320,11 @@ new <- function(...) {
         scale_linewidth_manual(name = "", values = c(2.5, 1, 1)) +
         scale_alpha_manual(name = "", values = c(0.75, 1, 1)) +
         scale_size_manual(name = "", values = c(0, 2, 0)) +
-        coord_cartesian(xlim = c(1, length(res$best$sim)),
+        coord_cartesian(xlim = c(input$plot_slider[1], input$plot_slider[2]),
                         ylim = c(min(c(res$best$obs, mean_distrib), na.rm = TRUE),
                                  max(c(res$best$obs, mean_distrib), na.rm = TRUE))) +
         scale_y_continuous(expand = expansion(mult = c(0.13, 0.08))) +
         xlab("t [T]") +
-        ylab(expression(paste("Discharge [L"~T^-1, "]"))) +
         theme_bw(base_size = 16) +
         theme(legend.position = "bottom")
 
@@ -364,7 +366,7 @@ new <- function(...) {
 
     observe({
       req(res$all)
-      req(names(res$all$ratio) == type_name())
+      req(all(names(res$all$ratio) == type_name()))
 
       # p1_sa
       lapply(seq(n_component()), function(n) {
@@ -444,6 +446,13 @@ new <- function(...) {
     })
 
     # UI output ---------------------------------------------------------------
+
+    output$ui_plot_slider <- renderUI({
+      req(df())
+      min <- 1
+      max <- nrow(df())
+      sliderInput("plot_slider", NULL, value = c(min, max), min = min, max = max, step = 1, width = "100%")
+    })
 
     output$ui_p1 <- renderUI({
       req(type())
