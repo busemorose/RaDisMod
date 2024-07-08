@@ -17,7 +17,7 @@ new <- function(...) {
 
   # Define variables
   file_format <- c("text/csv","text/comma-separated-values, text/plain", ".csv")
-  MC_type <- c("EMM", "EPM", "PEM", "DM")
+  MC_type <- c("EMM", "EPM", "PEM", "DM", "PFM")
   WOBJ <- c("KGE", "NSE", "KGENP", "KGEABS", "RMSE")
   warmup_method <- c("u_Cin", "u_Cobs", "1_Cin", "1_Cobs")
 
@@ -162,6 +162,7 @@ new <- function(...) {
                        type() == "EPM" ~ list(c("T [T]", "T")),
                        type() == "PEM" ~ list(c("T [T]", "T")),
                        type() == "DM" ~ list(c("T [T]", "T")),
+                       type() == "PFM" ~ list(c("T [T]", "T")),
                        type() == "custom" ~ list(c("NOT USED", "NOT USED")))
     })
 
@@ -170,6 +171,7 @@ new <- function(...) {
                        type() == "EPM" ~ list(c("n [-]", "n")),
                        type() == "PEM" ~ list(c("n [-]", "n")),
                        type() == "DM" ~ list(c("DP [-]", "DP")),
+                       type() == "PFM" ~ list(c("NOT USED", "NOT USED")),
                        type() == "custom" ~ list(c("NOT USED", "NOT USED")))
     })
 

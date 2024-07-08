@@ -97,9 +97,16 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
     sim_list <- list()
 
     for (c in seq(n_component)) {
-      MC <- do.call(paste0("MC_", type[c]), list(all$p1[[paste0(type[c], "_", n_type[c])]][n], all$p2[[paste0(type[c], "_", n_type[c])]][n], max_t))
-      sim_list[[c]] <- rev(stats::convolve(rev(MC), Cin_warmup, conj = TRUE, type = "open"))
-      sim_list[[c]] <- sim_list[[c]][(warmup_time + 1):(warmup_time + l_obs)] * all$ratio[[paste0(type[c], "_", n_type[c])]][n]
+
+      if (type[c] != "PFM") {
+        MC <- do.call(paste0("MC_", type[c]),
+                      list(all$p1[[paste0(type[c], "_", n_type[c])]][n], all$p2[[paste0(type[c], "_", n_type[c])]][n], max_t))
+        sim_list[[c]] <- rev(stats::convolve(rev(MC), Cin_warmup, conj = TRUE, type = "open"))
+        sim_list[[c]] <- sim_list[[c]][(warmup_time + 1):(warmup_time + l_obs)] * all$ratio[[paste0(type[c], "_", n_type[c])]][n]
+      } else {
+        sim_list[[c]] <- MC_PFM(all$p1[[paste0(type[c], "_", n_type[c])]][n], Cin_warmup)
+        sim_list[[c]] <- sim_list[[c]][(warmup_time + 1):(warmup_time + l_obs)] * all$ratio[[paste0(type[c], "_", n_type[c])]][n]
+      }
     }
 
     sim <- Reduce(`+`, sim_list)
@@ -128,10 +135,10 @@ model_tracer <- function(obs, Cin, n_run = 1, crit = c("KGE", "NSE", "KGENP", "K
       best$ratio <- lapply(all$ratio, `[`, n)
       message(paste0(crit, ": ", round(best$obj, 5), " ––– ",
                      paste(paste0(lapply(best$ratio, "round", 3), " * ",
-                           type, "[", lapply(best$p1, "round", 2),
-                           "; ", lapply(best$p2, "round", 2),
-                           "]"),
-                    collapse = " + ")))
+                                  type, "[", lapply(best$p1, "round", 2),
+                                  "; ", lapply(best$p2, "round", 2),
+                                  "]"),
+                           collapse = " + ")))
     }
   }
 
