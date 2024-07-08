@@ -321,8 +321,10 @@ new <- function(...) {
         scale_alpha_manual(name = "", values = c(0.75, 1, 1)) +
         scale_size_manual(name = "", values = c(0, 2, 0)) +
         coord_cartesian(xlim = c(input$plot_slider[1], input$plot_slider[2]),
-                        ylim = c(min(c(res$best$obs, mean_distrib), na.rm = TRUE),
-                                 max(c(res$best$obs, mean_distrib), na.rm = TRUE))) +
+                        ylim = c(min(c(res$best$obs[input$plot_slider[1]:input$plot_slider[2]],
+                                       mean_distrib[input$plot_slider[1]:input$plot_slider[2]]), na.rm = TRUE),
+                                 max(c(res$best$obs[input$plot_slider[1]:input$plot_slider[2]],
+                                       mean_distrib[input$plot_slider[1]:input$plot_slider[2]]), na.rm = TRUE))) +
         scale_y_continuous(expand = expansion(mult = c(0.13, 0.08))) +
         xlab("t [T]") +
         theme_bw(base_size = 16) +
