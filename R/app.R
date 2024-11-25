@@ -36,6 +36,7 @@ RaDisMod <- function(...) {
         overflow-y:scroll;
         max-height: 200px;
         height: 200px;
+        opacity: 100 !important;
       }"))
     ),
 
@@ -153,7 +154,7 @@ RaDisMod <- function(...) {
       switch(input$type,
              "socose" = c("alpha [-]", "alpha"),
              "gamma" = c("rate [-]", "rate"),
-             "lnorm" = c("mean [L/T]", "sd"),
+             "lnorm" = c("sd [L/T]", "sd"),
              "triangle" = c("alpha [-]", "alpha"),
              "custom" = c("NOT USED", "NOT USED"))
     })
