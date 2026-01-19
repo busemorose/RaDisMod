@@ -41,6 +41,11 @@ RaDisMod <- function(...) {
         opacity: 100 !important;
       }
 
+      /* Hide progress bar import */
+      #import_progress, #import_hu_progress {
+        display: none;
+      }
+
       /* Slider size and position */
       .shiny-input-container:has(.irs) {
         display: flex;
@@ -86,17 +91,22 @@ RaDisMod <- function(...) {
     sidebarPanel(
 
       fluidRow(
-        column(4, fileInput("import", "Import dataset", accept = file_format)),
+        column(12, fileInput("import", "Import dataset", accept = file_format))),
+      fluidRow(
+        column(4, numericInput("max_t", "Length of HU", value = 1000, min = 1, max = 10000)),
         column(4, selectInput("type", "Type of HU", choices = HU_type, selected = HU_type[1])),
         column(4, fileInput("import_hu", "Import HU", accept = file_format))),
-      fluidRow(
-        column(4, numericInput("max_t", "Length of HU", value = 1000, min = 1, max = 10000), offset = 4)),
       sliderInput("J", "J [L]", value = 250, min = 1, max = 600, step = 1),
       uiOutput("ui_p1"),
       uiOutput("ui_p2"),
       uiOutput("ui_eval_range"),
 
-      h4("Parameter optimisation"),
+      div(
+        style = "display:flex; align-items:center; gap:10px;",
+        tags$hr(style = "flex:1; margin:0; border:0; border-top:1px solid #202020;"),
+        h4("Parameter optimisation", style = "white-space:nowrap;"),
+        tags$hr(style = "flex:1; margin:0; border:0; border-top:1px solid #202020;")
+      ),
       fluidRow(
         column(3, numericInput("n_run", "Iterations", value = 1000, min = 1, max = 100000, step = 100)),
         column(3, selectInput("obj", "Obj function", choices = WOBJ, selected = "KGE")),
