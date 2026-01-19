@@ -24,6 +24,8 @@ RaDisMod <- function(...) {
 
   ui <- fluidPage(
 
+    shinyWidgets::chooseSliderSkin("Square"),
+
     # CSS
     tags$head(
       # Note the wrapping of the string in HTML()
@@ -37,6 +39,42 @@ RaDisMod <- function(...) {
         max-height: 200px;
         height: 200px;
         opacity: 100 !important;
+      }
+
+      /* Slider size and position */
+      .shiny-input-container:has(.irs) {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .shiny-input-container:has(.irs) > label {
+        width: 90px;
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      .shiny-input-container:has(.irs) .irs {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .irs-grid-text {
+        font-size: 10px;
+      }
+      .irs--square .irs-grid-text {
+        font-size: 10px;
+      }
+      .irs--square .irs-min, .irs--square .irs-max {
+        font-size: 10px;
+      }
+      .irs--square .irs-from,.irs--square .irs-to, .irs--square .irs-single {
+        font-size: 12px;
+      }
+      .irs--square .irs-handle {
+        width: 10px;
+        height: 10px;
+        top: 27.5px;
       }"))
     ),
 
@@ -58,7 +96,7 @@ RaDisMod <- function(...) {
       uiOutput("ui_p2"),
       uiOutput("ui_eval_range"),
 
-      h3("Parameter optimisation"),
+      h4("Parameter optimisation"),
       fluidRow(
         column(3, numericInput("n_run", "Iterations", value = 1000, min = 1, max = 100000, step = 100)),
         column(3, selectInput("obj", "Obj function", choices = WOBJ, selected = "KGE")),
@@ -346,7 +384,7 @@ RaDisMod <- function(...) {
       req(eval_range())
       x <- score(res$best$sim[eval_range()[1]:eval_range()[2]],
                  res$best$obs[eval_range()[1]:eval_range()[2]],
-                 crit = c("NSE", "KGE", "KGENP", "KGE_abs", "alpha", "beta", "rpearson"),
+                 crit = c("NSE", "KGE", "KGENP", "KGE_abs", "alpha", "beta", "rpearson", "RMSE"),
                  allow_NA = input$allow_NA)
 
       data.frame(as.list(x))
