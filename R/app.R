@@ -93,7 +93,7 @@ RaDisMod <- function(...) {
     shinyjs::useShinyjs(),
 
     # UI elements
-    card(
+    bslib::card(
       bslib::layout_sidebar(
 
         sidebar = bslib::sidebar(
@@ -133,17 +133,17 @@ RaDisMod <- function(...) {
 
         bslib::card(
 
-          layout_columns(
+          bslib::layout_columns(
 
-            layout_columns(
-              layout_columns(
+            bslib::layout_columns(
+              bslib::layout_columns(
                 shinyjs::hidden(div(id = "plot_title", h3("Hydrograph"))),
                 shinyjs::hidden(downloadButton("download_results", "Download results"))
               ),
               plotOutput("plot"),
               col_widths = c(12, 12)
             ),
-            layout_columns(
+            bslib::layout_columns(
               shinyjs::hidden(div(id = "unit_title", h3("Unit hydrograph"))),
               plotOutput("HU", width = "100%", height = "300px"),
               div(
@@ -157,7 +157,7 @@ RaDisMod <- function(...) {
           div(
             div(
               class = "col-sm-4",
-              card(
+              bslib::card(
                 shinyjs::hidden(verbatimTextOutput("msg_obj", placeholder = TRUE)),
                 shinyjs::hidden(numericInput("min_obj", "Min obj.", value = 0, step = 0.1)),
                 shinyjs::hidden(textOutput("n_sim"))
@@ -165,7 +165,7 @@ RaDisMod <- function(...) {
             ),
             div(
               class = "col-sm-8",
-              layout_columns(
+              bslib::layout_columns(
                 plotOutput("J_sa", height = "300px"),
                 plotOutput("p1_sa", height = "300px"),
                 plotOutput("p2_sa", height = "300px")

@@ -1,6 +1,6 @@
 Package: RaDisMod
 Title: Application For Hydrological Modelling
-Version: 0.0.0.9000
+Version: 1.0
 Authors@R: 
     person("Guillaume", "Cinkus", , "guillaume.cinkus@univ-avignon.fr", role = c("aut", "cre"))
     person("Vincent", "Marc", , "vincent.marc@univ-avignon.fr", role = c("aut", "cre"))
@@ -17,4 +17,5 @@ Imports:
     shinyjs,
     tidyr,
     waiter,
-    shinyWidgets
+    shinyWidgets,
+    bslib
