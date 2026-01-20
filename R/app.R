@@ -9,6 +9,7 @@
 #' @import shiny
 #' @import waiter
 #' @import ggplot2
+#' @import bslib
 
 RaDisMod <- function(...) {
 
@@ -32,6 +33,10 @@ RaDisMod <- function(...) {
       tags$style(HTML("
       #eval_range-label {
         color: #E69F00;
+      }
+
+      .html-fill-container {
+        display: inline;
       }
 
       #msg_obj {
@@ -88,63 +93,92 @@ RaDisMod <- function(...) {
     shinyjs::useShinyjs(),
 
     # UI elements
-    sidebarPanel(
+    card(
+      bslib::layout_sidebar(
 
-      fluidRow(
-        column(12, fileInput("import", "Import dataset", accept = file_format))),
-      fluidRow(
-        column(4, numericInput("max_t", "Length of HU", value = 1000, min = 1, max = 10000)),
-        column(4, selectInput("type", "Type of HU", choices = HU_type, selected = HU_type[1])),
-        column(4, fileInput("import_hu", "Import HU", accept = file_format))),
-      sliderInput("J", "J [L]", value = 250, min = 1, max = 600, step = 1),
-      uiOutput("ui_p1"),
-      uiOutput("ui_p2"),
-      uiOutput("ui_eval_range"),
+        sidebar = bslib::sidebar(
+          width = 500,
+          gap = 0,
 
-      div(
-        style = "display:flex; align-items:center; gap:10px;",
-        tags$hr(style = "flex:1; margin:0; border:0; border-top:1px solid #202020;"),
-        h4("Parameter optimisation", style = "white-space:nowrap;"),
-        tags$hr(style = "flex:1; margin:0; border:0; border-top:1px solid #202020;")
-      ),
-      fluidRow(
-        column(3, numericInput("n_run", "Iterations", value = 1000, min = 1, max = 100000, step = 100)),
-        column(3, selectInput("obj", "Obj function", choices = WOBJ, selected = "KGE")),
-        column(3, br(), checkboxInput("allow_NA", "Allow NA")),
-        column(3, br(), checkboxInput("ci_mode", "CI mode")),
-        column(3,
-               uiOutput("ui_percentile_min"),
-               uiOutput("ui_percentile_max"))),
-      sliderInput("J_range", "J [L]", value = c(1, 600), min = 1, max = 600, step = 1),
-      uiOutput("ui_p1_range"),
-      uiOutput("ui_p2_range"),
-      actionButton("run", "Run")
+          fluidRow(
+            column(12, fileInput("import", "Import dataset", accept = file_format))),
+          fluidRow(
+            column(4, numericInput("max_t", "Length of HU", value = 1000, min = 1, max = 10000)),
+            column(4, selectInput("type", "Type of HU", choices = HU_type, selected = HU_type[1])),
+            column(4, fileInput("import_hu", "Import HU", accept = file_format))),
+          sliderInput("J", "J [L]", value = 250, min = 1, max = 600, step = 1),
+          uiOutput("ui_p1"),
+          uiOutput("ui_p2"),
+          uiOutput("ui_eval_range"),
 
-    ),
+          div(
+            style = "display:flex; align-items:center; gap:10px;",
+            tags$hr(style = "flex:1; margin:0; border:0; border-top:1px solid #202020;"),
+            h4("Parameter optimisation", style = "white-space:nowrap;"),
+            tags$hr(style = "flex:1; margin:0; border:0; border-top:1px solid #202020;")
+          ),
+          fluidRow(
+            column(3, numericInput("n_run", "Iterations", value = 1000, min = 1, max = 100000, step = 100)),
+            column(3, selectInput("obj", "Obj function", choices = WOBJ, selected = "KGE")),
+            column(3, br(), checkboxInput("allow_NA", "Allow NA")),
+            column(3, br(), checkboxInput("ci_mode", "CI mode")),
+            column(3,
+                   uiOutput("ui_percentile_min"),
+                   uiOutput("ui_percentile_max"))),
+          sliderInput("J_range", "J [L]", value = c(1, 600), min = 1, max = 600, step = 1),
+          uiOutput("ui_p1_range"),
+          uiOutput("ui_p2_range"),
+          actionButton("run", "Run")
+        ),
 
-    mainPanel(
+        bslib::card(
 
-      # tags$img(src = "logo_hse.png", height = "5%", width = "5%", align = "right",
-      #          style = "margin-top:10px;"),
+          layout_columns(
 
-      br(), br(), br(), br(), br(),
-      fluidRow(column(4, tableOutput("perf"), offset = 1),
-               column(1, br(), shinyjs::hidden(downloadButton("download_results", "Download results")), offset = 1),
-               column(3, shinyjs::hidden(div(id = "unit_title", h3("Unit hydrograph"))), offset = 2)),
-      fluidRow(column(8, plotOutput("plot")),
-               column(4, plotOutput("HU"))),
-      br(),
-      fluidRow(
-        column(2,
-               fluidRow(shinyjs::hidden(verbatimTextOutput("msg_obj", placeholder = TRUE))),
-               fluidRow(shinyjs::hidden(numericInput("min_obj", "Min obj.", value = 0, step = 0.1))),
-               fluidRow(shinyjs::hidden(textOutput("n_sim")))),
-        column(3, plotOutput("J_sa", height = "300px"), offset = 1),
-        column(3, plotOutput("p1_sa", height = "300px")),
-        column(3, plotOutput("p2_sa", height = "300px")))
+            layout_columns(
+              layout_columns(
+                shinyjs::hidden(div(id = "plot_title", h3("Hydrograph"))),
+                shinyjs::hidden(downloadButton("download_results", "Download results"))
+              ),
+              plotOutput("plot"),
+              col_widths = c(12, 12)
+            ),
+            layout_columns(
+              shinyjs::hidden(div(id = "unit_title", h3("Unit hydrograph"))),
+              plotOutput("HU", width = "100%", height = "300px"),
+              div(
+                style = "display: flex; justify-content: center;",
+                tableOutput("perf")
+              ),
+              col_widths = c(12, 12, 12, 12)
+            )
+          ),
 
+          div(
+            div(
+              class = "col-sm-4",
+              card(
+                shinyjs::hidden(verbatimTextOutput("msg_obj", placeholder = TRUE)),
+                shinyjs::hidden(numericInput("min_obj", "Min obj.", value = 0, step = 0.1)),
+                shinyjs::hidden(textOutput("n_sim"))
+              )
+            ),
+            div(
+              class = "col-sm-8",
+              layout_columns(
+                plotOutput("J_sa", height = "300px"),
+                plotOutput("p1_sa", height = "300px"),
+                plotOutput("p2_sa", height = "300px")
+              )
+            )
+          )
+
+
+        )
+
+
+      )
     )
-
   )
 
   #------------------ Server ------------------#
@@ -154,12 +188,14 @@ RaDisMod <- function(...) {
     # Hide some UI elements if no dataset
     observe({
       if (!is.na(res$best[1])) {
+        shinyjs::show("plot_title")
         shinyjs::show("unit_title")
         shinyjs::show("msg_obj")
         shinyjs::show("min_obj")
         shinyjs::show("n_sim")
         shinyjs::show("download_results")
       } else {
+        shinyjs::hide("plot_title")
         shinyjs::hide("unit_title")
         shinyjs::hide("msg_obj")
         shinyjs::hide("min_obj")
@@ -411,7 +447,7 @@ RaDisMod <- function(...) {
 
     output$ui_eval_range <- renderUI({
       sliderInput("eval_range",
-                  "Evaluation range",
+                  HTML("Evaluation<br>range"),
                   value = c(max(1, min(which(!is.na(df()$obs)))),
                             min(length(df()$obs), max(which(!is.na(df()$obs))))),
                   min = max(1, min(which(!is.na(df()$obs)))),
@@ -473,10 +509,10 @@ RaDisMod <- function(...) {
       filename = paste0("results.txt"),
       content = function(filename) {
         utils::write.table(tidyr::tibble(t = 1:length(res$best$PN),
-                                  PN = res$best$PN,
-                                  obs = res$best$obs,
-                                  sim = res$best$sim),
-                    filename, sep = ";", row.names = FALSE)
+                                         PN = res$best$PN,
+                                         obs = res$best$obs,
+                                         sim = res$best$sim),
+                           filename, sep = ";", row.names = FALSE)
       },
     )
 
@@ -487,6 +523,6 @@ RaDisMod <- function(...) {
 
   }
 
-  shinyApp(ui, server, ...)
+  shinyApp(ui, server, options = list(launch.browser = TRUE), ...)
 
 }
