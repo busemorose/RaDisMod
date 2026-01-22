@@ -4,8 +4,6 @@
 #'
 #' @param ... No argument are needed to launch the application.
 #'
-#' @export
-#'
 #' @import shiny
 #' @import waiter
 #' @import ggplot2
