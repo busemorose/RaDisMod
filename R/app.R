@@ -51,6 +51,17 @@ RaDisMod <- function(...) {
         display: none;
       }
 
+      /* Size of CI mode inputs */
+      #ui_percentile_min .shiny-input-number, #ui_percentile_max .shiny-input-number {
+        width: 80%;
+        height: 24px;
+      }
+
+      #ui_percentile_min .form-group {
+        margin-bottom: 5px;
+        margin-top: 10px;
+      }
+
       /* Slider size and position */
       .shiny-input-container:has(.irs) {
         display: flex;
@@ -120,8 +131,7 @@ RaDisMod <- function(...) {
           fluidRow(
             column(3, numericInput("n_run", "Iterations", value = 1000, min = 1, max = 100000, step = 100)),
             column(3, selectInput("obj", "Obj function", choices = WOBJ, selected = "KGE")),
-            column(3, br(), checkboxInput("allow_NA", "Allow NA")),
-            column(3, br(), checkboxInput("ci_mode", "CI mode")),
+            column(3, checkboxInput("allow_NA", "Allow NA"), checkboxInput("ci_mode", "CI mode")),
             column(3,
                    uiOutput("ui_percentile_min"),
                    uiOutput("ui_percentile_max"))),
