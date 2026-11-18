@@ -404,6 +404,7 @@ RaDisMod <- function(...) {
         geom_line() +
         annotate("text", x = (length(res$best$HU) / 2), y = max(res$best$HU), hjust = -0.1,
                  label = paste0("Tm = ", which.max(res$best$HU) - 1)) +
+        xlab("t") +
         ylab(expression(paste("Discharge [L"~T^-1, "]"))) +
         theme_bw(base_size = 16)
     })
